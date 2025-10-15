@@ -1,0 +1,112 @@
+# ⚡ QUICK UPLOAD REFERENCE CARD
+
+## 🎯 YOUR SETUP (Copy this!)
+
+### Database Credentials (Already Configured ✅):
+```
+hostname: localhost
+username: studokch_astro
+password: @Navneet123N
+database: studokch_astro
+```
+
+### Folder Location:
+```
+/Users/sarthakbansal/Downloads/kundali-magic-main/
+```
+
+---
+
+## 📋 5-MINUTE UPLOAD CHECKLIST
+
+### 1. FILEZILLA CONNECTION (2 min)
+```
+□ Open FileZilla
+□ Enter: Host, Username, Password, Port
+□ Click [Quickconnect]
+□ Connected? ✅
+```
+
+### 2. NAVIGATE (1 min)
+```
+LEFT Panel: /Users/sarthakbansal/Downloads/kundali-magic-main/
+RIGHT Panel: /public_html/ (or /www/)
+```
+
+### 3. UPLOAD (10 min)
+```
+□ Select ALL files (Ctrl+A or Cmd+A)
+□ Drag from LEFT → DROP on RIGHT
+□ Wait for 100% complete
+□ All files uploaded? ✅
+```
+
+### 4. SET PERMISSIONS (2 min)
+```
+Right-click → File permissions → 755:
+
+□ application/cache/
+□ application/logs/
+□ application/sessions/
+□ uploads/kundlis/
+```
+
+### 5. UPDATE CONFIG (1 min)
+```
+Edit: application/config/config.php
+Change: $config['base_url'] = 'https://YOURDOMAIN.com/';
+Save & Upload
+```
+
+### 6. TEST (2 min)
+```
+□ Visit: https://yourdomain.com
+□ Homepage loads? ✅
+□ Images load? ✅
+□ Test registration
+□ Test login
+```
+
+---
+
+## 🚨 COMMON ERRORS - QUICK FIXES
+
+| Error | Fix |
+|-------|-----|
+| White screen | Set permissions to 777 |
+| 500 error | Check .htaccess uploaded |
+| DB error | Already configured! Just check if DB imported |
+| CSS not loading | Update base_url in config.php |
+| 404 on pages | .htaccess missing or mod_rewrite off |
+
+---
+
+## 📞 QUICK SUPPORT
+
+**FileZilla not connecting?**
+- Check host/username/password
+- Try port 21 or 22
+- Contact hosting support
+
+**Website not loading?**
+- Check if upload finished (100%)
+- Check folder permissions
+- Check base_url in config.php
+
+---
+
+## ✅ WHAT'S ALREADY DONE
+
+- ✅ Code optimized
+- ✅ Database credentials configured
+- ✅ Mobile navigation fixed
+- ✅ Folder cleaned (no .git/)
+- ✅ .htaccess created
+- ✅ uploads/ folder created
+- ✅ Ready to upload!
+
+---
+
+**Total Time: ~20 minutes**  
+**Difficulty: Easy**  
+**Status: READY! 🚀**

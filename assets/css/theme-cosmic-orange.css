@@ -1,0 +1,594 @@
+/* Cosmic Orange Theme - global, elegant, non-destructive overrides */
+:root {
+  --primary-color: #ff7010;   /* vivid orange */
+  --secondary-color: #ffa500; /* amber */
+  --accent-color: #e65100;    /* deep orange */
+  --text-on-dark: #fff4e6;
+  --text-muted: rgba(255, 244, 230, 0.8);
+  --surface-1: rgba(45, 24, 16, 0.85);
+  --surface-2: rgba(61, 32, 24, 0.7);
+  --border-glow: rgba(255, 112, 16, 0.28);
+}
+
+html, body {
+  background: linear-gradient(135deg, #1a0d0a 0%, #2d1810 50%, #3d2018 100%);
+  background-attachment: fixed;
+  color: var(--text-on-dark);
+  min-height: 100vh;
+}
+
+/* Subtle star field background */
+.cosmic-stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 180, 120, 0.10) 0, transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(255, 140, 60, 0.08) 0, transparent 50%),
+    radial-gradient(circle at 60% 70%, rgba(255, 112, 16, 0.06) 0, transparent 45%);
+  animation: cosmic-drift 40s linear infinite;
+}
+
+@keyframes cosmic-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.5%, 1.5%, 0) scale(1.02); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Elevate main wrapper above stars */
+.as_main_wrapper, .container, .container-fluid, section { z-index: 1; position: relative; }
+
+/* Sections */
+section.as_banner_wrapper,
+section.as_about_wrapper,
+section.as_service_wrapper,
+section.as_customer_wrapper,
+section.as_whychoose_wrapper,
+.as_appointment_wrapper {
+  background: linear-gradient(135deg, rgba(26, 13, 10, 0.92) 0%, rgba(45, 24, 16, 0.78) 50%, rgba(61, 32, 24, 0.6) 100%);
+}
+
+/* Remove legacy blue and image backgrounds for a consistent cosmic backdrop */
+.as_banner_wrapper,
+.as_about_wrapper,
+.as_service_wrapper,
+.as_customer_wrapper,
+.as_whychoose_wrapper,
+.as_contact_section,
+.as_footer_wrapper,
+.as_breadcrum_wrapper {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+/* Specific legacy blues overridden */
+.as_service_box,
+.as_servicedetail_wrapper,
+.as_contact_expert,
+.as_copyright_wrapper {
+  background-color: transparent !important;
+}
+
+/* Remove decorative background number/shape beside cards (Why Choose) */
+.as_whychoose_box .as_number { display: none !important; }
+.as_whychoose_box h4 { margin-top: 10px !important; }
+
+/* Banner padding stays but without forcing background images */
+.as_banner_wrapper {
+  background: linear-gradient(135deg, rgba(26, 13, 10, 0.92) 0%, rgba(45, 24, 16, 0.78) 50%, rgba(61, 32, 24, 0.6) 100%) !important;
+}
+
+/* Navbar */
+.as_header_wrapper {
+  background: linear-gradient(135deg, rgba(26, 13, 10, 0.95) 0%, rgba(45, 24, 16, 0.9) 100%);
+  backdrop-filter: saturate(1.2) blur(14px);
+  border-bottom: 1px solid var(--border-glow);
+}
+.as_menu ul li a { color: var(--text-on-dark); transition: color .25s ease; }
+.as_menu ul li a:hover { color: var(--primary-color); }
+
+/* Headings / accents */
+.as_heading, h1, h2, h3, h4, h5, h6 { color: var(--primary-color); }
+.as_orange { color: var(--primary-color); }
+
+/* Cards */
+.as_service_box, .as_customer_box, .as_whychoose_box, .as_journal_box_wrapper, .kundli-form-container {
+  background: linear-gradient(135deg, var(--surface-1) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border-glow);
+  color: var(--text-on-dark);
+  box-shadow: 0 10px 30px rgba(255, 112, 16, 0.15);
+}
+
+/* Generate Kundli: hero + features */
+.kundli-hero {
+  padding: 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 112, 16, 0.08) 0%, rgba(255, 165, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 112, 16, 0.18);
+}
+.kundli-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.kundli-features .feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(61, 32, 24, 0.35) 0%, rgba(61, 32, 24, 0.15) 100%);
+  border: 1px solid rgba(255, 112, 16, 0.18);
+}
+.feature-item i {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 112, 16, 0.25), rgba(255, 112, 16, 0.05));
+  color: var(--secondary-color);
+  font-size: 18px;
+  box-shadow: 0 6px 18px rgba(255,112,16,0.25) inset;
+}
+.feature-item h5 {
+  color: var(--text-on-dark);
+  margin: 0 0 4px 0;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+.feature-item p {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Form container header + offer */
+.kundli-form-container {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.kundli-form-container.light {
+  background: linear-gradient(180deg, #fffaf6 0%, #fff6ef 100%) !important;
+  color: #2a120d !important;
+  border: 1.5px solid rgba(255, 138, 61, 0.35);
+  box-shadow: 0 14px 38px rgba(255, 112, 16, 0.18);
+}
+.kundli-form-body { padding: 16px; }
+.kundli-form-body.light .form-control {
+  background: #ffffff;
+  border-color: #ffb26b;
+}
+.kundli-form-body.light .form-control:focus {
+  border-color: #ff8a3d;
+  box-shadow: 0 0 0 3px rgba(255, 138, 61, 0.22);
+}
+.kundli-form-body.light label { color: #49281f; font-weight: 600; letter-spacing: .2px; }
+.kundli-form-body .form-group { margin-bottom: 12px; }
+.form-grid > [class*="col-"] { margin-bottom: 14px; }
+.kundli-header h2 { color: var(--primary-color) !important; }
+.kundli-header {
+  text-align: center;
+  padding: 16px 14px 10px;
+  background: linear-gradient(135deg, rgba(255, 112, 16, 0.22) 0%, rgba(255, 165, 0, 0.15) 100%);
+  border-bottom: 1px solid rgba(255, 112, 16, 0.25);
+}
+.kundli-header i { color: var(--primary-color); font-size: 22px; margin-bottom: 8px; }
+.kundli-header p { margin: 0; opacity: .85; color: var(--text-muted); }
+.kundli-offer {
+  margin: 12px auto 6px;
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: #1a0d0a;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: 0 6px 18px rgba(255,112,16,0.35);
+}
+.kundli-tip {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 6px 0 14px;
+}
+
+/* Form sections and buttons */
+.kundli-form-body .as_btn { width: 100%; }
+.form-section { margin: 6px 0 8px; }
+.form-section h5 { margin: 0; font-weight: 800; color: var(--primary-color); letter-spacing: .2px; }
+.kundli-form-body.light .form-control { border-radius: 10px; }
+
+/* Plan tiles */
+.plan-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 10px 0 18px;
+}
+.plan-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(61, 32, 24, 0.7), rgba(61, 32, 24, 0.35));
+  border: 2px solid rgba(255, 112, 16, 0.15);
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  box-shadow: 0 6px 14px rgba(255, 112, 16, 0.15);
+}
+.plan-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(255, 112, 16, 0.25); }
+.plan-card .plan-img-wrap {
+  width: 54px; height: 54px; border-radius: 12px; overflow: hidden; flex: 0 0 54px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 112, 16, 0.25), rgba(61, 32, 24, 0.6));
+  display: grid; place-items: center;
+  border: 1px solid rgba(255,112,16,0.25);
+}
+.plan-card i { color: var(--secondary-color); font-size: 22px; animation: pulse-glow 3.6s ease-in-out infinite; }
+.plan-card .plan-meta h5 { margin: 0; color: var(--text-on-dark); font-weight: 800; letter-spacing: .2px; }
+.plan-card .plan-meta .price { margin: 0; color: var(--secondary-color); font-weight: 800; }
+.plan-badge { position: absolute; top: 8px; right: 10px; background: rgba(255, 165, 0, 0.2); color: var(--text-on-dark); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255,165,0,0.35); }
+.plan-badge.alt { background: rgba(255, 112, 16, 0.22); border-color: rgba(255,112,16,0.35); }
+
+/* radio checked visual */
+input[type="radio"]#plan_basic:checked + label.plan-card,
+input[type="radio"]#plan_detailed:checked + label.plan-card {
+  border-color: #ff8a3d;
+  box-shadow: 0 0 0 3px rgba(255, 138, 61, 0.18), 0 10px 24px rgba(255, 112, 16, 0.25);
+}
+
+@keyframes gentle-float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0% { text-shadow: 0 0 6px rgba(255, 140, 0, 0.5); transform: translateY(0); }
+  50% { text-shadow: 0 0 12px rgba(255, 140, 0, 0.7); transform: translateY(-1px); }
+  100% { text-shadow: 0 0 6px rgba(255, 140, 0, 0.5); transform: translateY(0); }
+}
+
+@media (max-width: 576px) {
+  .plan-tiles { grid-template-columns: 1fr; }
+}
+
+/* Themed help box under form */
+.kundli-help {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(61, 32, 24, 0.6), rgba(26, 13, 10, 0.6));
+  border: 1px solid rgba(255, 112, 16, 0.25);
+  border-radius: 12px;
+  color: var(--text-on-dark);
+  box-shadow: 0 8px 22px rgba(255, 112, 16, 0.12);
+}
+.kundli-help a { color: var(--secondary-color); font-weight: 700; }
+.kundli-help a:hover { color: var(--primary-color); }
+
+/* Input leading icons */
+.input-icon { position: relative; }
+.input-icon > i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ffb26b;
+  font-size: 13px;
+  pointer-events: none;
+  width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 112, 16, 0.25), rgba(255, 112, 16, 0.08));
+  box-shadow: 0 0 0 1px rgba(255, 138, 61, 0.25) inset;
+}
+.input-icon > .form-control {
+  padding-left: 50px;
+  min-height: 44px;
+}
+/* For selects inside input-icon */
+.input-icon.as_select_box select.form-control {
+  padding-left: 50px;
+}
+
+/* Info banner */
+.user-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 12px 0 6px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255,165,0,0.12), rgba(255,112,16,0.12));
+  border: 1px dashed rgba(255,112,16,0.35);
+}
+.user-info-banner i { color: var(--secondary-color); font-size: 20px; margin-right: 10px; }
+.user-info-banner strong { color: var(--secondary-color); }
+.user-info-banner p { margin: 5px 0 0 0; color: var(--primary-color); }
+.user-info-banner a { color: var(--secondary-color); text-decoration: none; }
+
+/* Place suggestions dropdown */
+.place-suggestions.dropdown-menu {
+  display: block; /* toggled via JS */
+  max-height: 260px;
+  overflow-y: auto;
+  background: rgba(26, 13, 10, 0.96);
+  border: 1px solid rgba(255, 112, 16, 0.25);
+  border-radius: 10px;
+  padding: 6px 0;
+  width: 100%;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+.place-suggestions .dropdown-item {
+  padding: 10px 12px;
+  color: var(--text-on-dark);
+}
+.place-suggestions .dropdown-item.disabled { opacity: 0.6; }
+
+@media (max-width: 992px) {
+  .kundli-features { grid-template-columns: 1fr; }
+}
+
+/* Help box paragraphs */
+.kundli-help p { margin: 0 0 6px 0; }
+
+/* Buttons */
+.as_btn, .btn {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 60%, var(--accent-color) 100%);
+  color: #fff;
+  border: 2px solid #ffa726;
+  box-shadow: 0 6px 18px rgba(255, 112, 16, 0.3);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.as_btn:hover, .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(255, 112, 16, 0.4);
+}
+
+/* Forms */
+.form-control {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid var(--secondary-color);
+  color: #1a0d0a;
+}
+.form-control::placeholder { color: #7a4a2e; opacity: .8; }
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 112, 16, 0.20), 0 4px 18px rgba(255,112,16,0.15);
+}
+
+/* Footer */
+.as_footer_wrapper {
+  background: linear-gradient(135deg, #1a0d0a 0%, #2d1810 100%);
+  color: var(--text-on-dark);
+  border-top: 1px solid var(--border-glow);
+}
+
+/* Footer copyright bar - ensure readable color and on-brand styling */
+.as_copyright_wrapper {
+  background: linear-gradient(135deg, #1a0d0a 0%, #2d1810 100%);
+  border-top: 1px solid var(--border-glow);
+}
+.as_copyright_wrapper p {
+  color: var(--text-on-dark);
+  opacity: 0.9;
+  margin: 0.5rem 0;
+}
+
+/* Links */
+a { color: var(--secondary-color); }
+a:hover { color: var(--primary-color); }
+
+/* Utilities */
+.glow-orange { box-shadow: 0 10px 25px rgba(255, 112, 16, 0.4); }
+
+/* Remove legacy quote watermark behind testimonials */
+.as_customer_box:before {
+  background-image: none !important;
+  background: none !important;
+  opacity: 0 !important;
+}
+
+/* Subtle avatar polish */
+.as_customer_box .as_customer_img > img {
+  border: 2px solid var(--secondary-color);
+  box-shadow: 0 8px 18px rgba(255, 112, 16, 0.25);
+}
+
+/* Responsive tweaks */
+@media (max-width: 991px) {
+  .as_btn, .btn { border-width: 1.5px; }
+  .as_service_box, .as_customer_box, .as_whychoose_box { box-shadow: 0 8px 20px rgba(255,112,16,0.18); }
+  
+  /* Enhanced mobile menu z-index and clickability */
+  .as_header_wrapper {
+    position: relative !important;
+    z-index: 10000 !important;
+  }
+  
+  .as_header_wrapper .as_menu_wrapper {
+    position: absolute !important;
+    top: 100% !important;
+    left: 15px !important;
+    right: 15px !important;
+    z-index: 9999 !important;
+    background: linear-gradient(135deg, rgba(25, 25, 25, 0.98), rgba(50, 25, 0, 0.95)) !important;
+    backdrop-filter: blur(15px) !important;
+    border-radius: 15px !important;
+    margin-top: 15px !important;
+    padding: 25px 20px !important;
+    border: 1px solid rgba(255, 165, 0, 0.3) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 
+                0 5px 15px rgba(255, 165, 0, 0.1) !important;
+    animation: slideDownMobile 0.3s ease-out !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  .as_header_wrapper .as_menu_wrapper.menu-hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(-20px) !important;
+    pointer-events: none !important;
+  }
+  
+  @keyframes slideDownMobile {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  .as_menu {
+    z-index: 9998 !important;
+    position: relative !important;
+  }
+  
+  .as_menu ul {
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .as_menu ul li {
+    margin: 8px 0 !important;
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  .as_menu ul li a {
+    position: relative !important;
+    z-index: 10000 !important;
+    padding: 15px 20px !important;
+    display: block !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    border-radius: 10px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-decoration: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    margin: 8px 0 !important;
+    border: 1px solid rgba(255, 165, 0, 0.2) !important;
+    overflow: hidden !important;
+    -webkit-tap-highlight-color: rgba(255, 165, 0, 0.2) !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+  
+  .as_menu ul li a:hover,
+  .as_menu ul li a:focus,
+  .as_menu ul li a:active,
+  .as_menu ul li a.active {
+    background: linear-gradient(45deg, rgba(255, 165, 0, 0.8), rgba(255, 140, 0, 0.9)) !important;
+    color: #000 !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(255, 165, 0, 0.3) !important;
+    border-color: rgba(255, 165, 0, 0.8) !important;
+  }
+  
+  .as_menu ul li a.touch-active {
+    transform: scale(0.98) translateY(-1px) !important;
+    background: rgba(255, 165, 0, 0.15) !important;
+  }
+  
+  .as_toggle {
+    z-index: 10001 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    border: 2px solid rgba(255, 165, 0, 0.5) !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    background: rgba(255, 165, 0, 0.1) !important;
+    display: block !important;
+    width: 45px !important;
+    height: 40px !important;
+    margin-right: 15px !important;
+    transition: all 0.3s ease !important;
+  }
+  
+  .as_toggle:hover,
+  .as_toggle:focus {
+    background: rgba(255, 165, 0, 0.2) !important;
+    border-color: rgba(255, 165, 0, 0.8) !important;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.3) !important;
+  }
+  
+  .as_toggle .line {
+    background-color: #fff !important;
+    height: 3px !important;
+    width: 26px !important;
+    border-radius: 2px !important;
+    margin: 5px auto !important;
+    transition: all 0.3s ease-in-out !important;
+    display: block !important;
+    position: relative !important;
+  }
+  
+  /* Hamburger animation */
+  .menu_open .as_toggle .line:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px) !important;
+  }
+  
+  .menu_open .as_toggle .line:nth-child(2) {
+    opacity: 0 !important;
+  }
+  
+  .menu_open .as_toggle .line:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px) !important;
+  }
+  
+  /* Ensure cosmic stars don't interfere */
+  .cosmic-stars {
+    z-index: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Fix any overlapping content */
+  .as_banner_wrapper,
+  .as_main_wrapper > section:first-of-type {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Prevent body scroll when menu is open */
+  body.mobile-menu-open {
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .as_header_wrapper .as_menu_wrapper {
+    left: 10px !important;
+    right: 10px !important;
+    padding: 20px 15px !important;
+  }
+  
+  .as_menu ul li a {
+    font-size: 15px !important;
+    padding: 12px 15px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .as_header_wrapper .as_menu_wrapper {
+    margin: 10px 5px !important;
+    padding: 20px 15px !important;
+  }
+  
+  .as_menu ul li a {
+    font-size: 15px !important;
+    padding: 12px 15px !important;
+  }
+}

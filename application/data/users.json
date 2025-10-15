@@ -1,0 +1,19 @@
+[
+    {
+        "name": "Test User",
+        "email": "test1760510741@example.com",
+        "password": "$2y$10$1QOm5UwlImlN6soEytxBsuGVbz8dyhGeUYIQLAAYbhKq8JYpUhw.i",
+        "phone": "1234567890",
+        "_id": "68ef4315c802d889fd80aa50cfe68",
+        "created_at": "2025-10-15 06:45:41",
+        "updated_at": "2025-10-15 06:45:41"
+    },
+    {
+        "name": "demo",
+        "email": "bsarthak@gmail.com",
+        "password": "$2y$10$DJDSR327Igms\/qFN7t6StevfJFb1avDl6Q6T\/vDyCUrLjRlczDvv.",
+        "_id": "68ef52d5d7d273ad751e2b6177ee5",
+        "created_at": "2025-10-15 07:52:53",
+        "updated_at": "2025-10-15 07:52:53"
+    }
+]
