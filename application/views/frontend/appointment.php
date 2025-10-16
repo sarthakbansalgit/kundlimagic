@@ -354,41 +354,68 @@
 <script>
     $('#genrateKundli').on('submit', function(e) {
         e.preventDefault();
+        
+        // Show loading message
+        $('#response').html('<div class="alert alert-info" role="alert"><i class="fas fa-spinner fa-spin"></i> Processing payment request...</div>');
+        $('#genrateKundliBtn').prop('disabled', true).text('Processing...');
 
             $.ajax({
             url: '<?= base_url("payment/generateKundli") ?>',
             type: 'POST',
             data: $(this).serialize(),
-      success: function(response) {
-        try {
-          const res = JSON.parse(response);
+            dataType: 'json',
+            success: function(response) {
+                console.log('Response received:', response);
+                
+                // Check for error status
+                if (response.status === 'error') {
+                    $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> ' + response.message + '</div>');
+                    $('#genrateKundliBtn').prop('disabled', false).text('Generate Kundli');
+                    setTimeout(function() {
+                        $('#response').fadeOut('slow', function() { $(this).html('').show(); });
+                    }, 5000);
+                    return;
+                }
 
-          if (res.code === 'SUCCESS' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) {
-            // Redirect to PhonePe checkout
-            window.location.href = res.data.instrumentResponse.redirectInfo.url;
-            return;
-          }
+                // Check for PhonePe redirect URL
+                if (response.code === 'SUCCESS' && response.data && response.data.instrumentResponse && response.data.instrumentResponse.redirectInfo && response.data.instrumentResponse.redirectInfo.url) {
+                    $('#response').html('<div class="alert alert-success" role="alert"><i class="fas fa-check-circle"></i> Redirecting to payment gateway...</div>');
+                    // Redirect to PhonePe checkout
+                    setTimeout(function() {
+                        window.location.href = response.data.instrumentResponse.redirectInfo.url;
+                    }, 1000);
+                    return;
+                }
 
-          // If server returned an error or unexpected payload
-          let message = res.message || 'Unexpected response from server.';
-          $('#response').html('<div class="alert alert-danger" role="alert">' + message + '</div>');
-          setTimeout(function() {
-            $('#response').fadeOut('slow', function() { $(this).html('').show(); });
-          }, 3000);
-        } catch(e) {
-          console.error('JSON Parse Error:', e);
-          $('#response').html('<div class="alert alert-danger" role="alert">Error processing response. Please try again.</div>');
-        }
-      },
+                // Unexpected response format
+                console.error('Unexpected response format:', response);
+                $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-triangle"></i> Unexpected response from server. Please try again.</div>');
+                $('#genrateKundliBtn').prop('disabled', false).text('Generate Kundli');
+                setTimeout(function() {
+                    $('#response').fadeOut('slow', function() { $(this).html('').show(); });
+                }, 5000);
+            },
             error: function(xhr, status, error) {
-                $('#response').html('<div class="alert alert-danger" role="alert">' + error + '</div>');
-
-                // Hide after 3 seconds
+                console.error('AJAX Error:', xhr.responseText);
+                let errorMsg = 'Connection error. Please try again.';
+                
+                try {
+                    let errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse.message) {
+                        errorMsg = errorResponse.message;
+                    }
+                } catch(e) {
+                    // Use default error message
+                }
+                
+                $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-times-circle"></i> ' + errorMsg + '</div>');
+                $('#genrateKundliBtn').prop('disabled', false).text('Generate Kundli');
+                
                 setTimeout(function() {
                     $('#response').fadeOut('slow', function() {
                         $(this).html('').show();
                     });
-                }, 3000);
+                }, 5000);
             }
         });
     });
