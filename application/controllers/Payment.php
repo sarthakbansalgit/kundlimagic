@@ -124,6 +124,28 @@ class Payment extends CI_Controller
             return;
         }
 
+        // Verify payment status with PhonePe before proceeding
+        $status_url = site_url('phonepe/order_status?orderId=' . urlencode($orderId));
+        $ch = curl_init($status_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        $status_response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_err = curl_error($ch);
+        curl_close($ch);
+
+        if ($http_code !== 200 || $status_response === false) {
+            show_error('Unable to verify payment status. Please contact support.');
+            return;
+        }
+
+        $status_json = json_decode($status_response, true);
+        if (!is_array($status_json) || !isset($status_json['code']) || $status_json['code'] !== 'PAYMENT_SUCCESS') {
+            // Handle non-success codes like PAYMENT_PENDING/FAILED/ERROR
+            redirect('payment/payment_failure?orderId=' . urlencode($orderId));
+            return;
+        }
+
         // Get stored form data
         $form_data = $this->session->userdata('kundli_form_data');
         if (!$form_data) {
@@ -177,7 +199,11 @@ class Payment extends CI_Controller
                 'language' => $form_data['language'],
                 'kundli_type' => $form_data['kundli_type'],
                 'lat' => $form_data['lat'],
-                'long' => $form_data['long']
+                'long' => $form_data['long'],
+                'payment' => [
+                    'orderId' => $orderId,
+                    'status' => $status_json['code'] ?? 'UNKNOWN',
+                ]
             ])
         ];
 
