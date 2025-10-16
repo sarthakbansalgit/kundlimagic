@@ -62,6 +62,14 @@ class Payment extends CI_Controller
         // Store form data in session for later use in confirmation
         $this->session->set_userdata('kundli_form_data', $data);
         $this->session->set_userdata('merchant_order_id', $merchantOrderId);
+        
+        // Also store in database as backup
+        $this->load->model('frontend/Contactmodel');
+        $db_data = $data;
+        $db_data['merchantOrderId'] = $merchantOrderId;
+        $db_data['payment_status'] = 'PENDING';
+        $db_data['amount'] = $amount;
+        $this->Contactmodel->generate_kundli($db_data);
 
         // Call PhonePe controller (internal API)
         $phonepe_url = site_url('phonepe/create_payment');
@@ -87,20 +95,27 @@ class Payment extends CI_Controller
         header('Content-Type: application/json');
 
         if ($error) {
+            log_message('error', 'PhonePe API CURL Error: ' . $error);
             echo json_encode([
                 'status'  => 'error',
-                'message' => 'Payment service temporarily unavailable. Please try again later.'
+                'message' => 'Payment service temporarily unavailable. Please try again later.',
+                'error_code' => 'CURL_ERROR'
             ]);
             return;
         }
 
         if ($http_code !== 200) {
+            log_message('error', 'PhonePe API HTTP Error: ' . $http_code . ' Response: ' . $response);
             echo json_encode([
                 'status'  => 'error',
-                'message' => 'Payment service error. Please try again later.'
+                'message' => 'Payment service error. Please try again later.',
+                'error_code' => 'HTTP_' . $http_code
             ]);
             return;
         }
+
+        // Log successful response for debugging
+        log_message('debug', 'PhonePe API Response: ' . $response);
 
         echo $response;
     }
@@ -113,55 +128,97 @@ class Payment extends CI_Controller
     {
         $orderId = $this->input->get('orderId');
         if (!$orderId) {
-            show_error('Order ID is required');
+            log_message('error', 'Payment confirmation called without orderId');
+            show_error('Order ID is required for payment confirmation');
             return;
         }
 
         // Check if order ID matches the stored one
         $stored_order_id = $this->session->userdata('merchant_order_id');
         if ($stored_order_id !== $orderId) {
-            show_error('Invalid order ID');
+            log_message('error', 'Order ID mismatch. Expected: ' . $stored_order_id . ', Got: ' . $orderId);
+            
+            // Try to find the order in database as fallback
+            $this->load->model('frontend/Contactmodel');
+            $existing_order = $this->Contactmodel->get_kundli_by_order_id($orderId);
+            if (!$existing_order) {
+                show_error('Invalid or expired order ID');
+                return;
+            }
+            
+            // If order exists in DB but not in session, continue with processing
+            log_message('info', 'Found order in database, continuing with payment confirmation');
+        }
+
+        // Verify payment status with PhonePe before processing
+        $payment_status = $this->verify_payment_status($orderId);
+        if ($payment_status !== 'SUCCESS') {
+            log_message('error', 'Payment verification failed for order: ' . $orderId . ', status: ' . $payment_status);
+            show_error('Payment verification failed. Please contact support if money was debited.');
             return;
         }
 
         // Get stored form data
         $form_data = $this->session->userdata('kundli_form_data');
         if (!$form_data) {
-            show_error('Form data not found');
-            return;
+            log_message('error', 'Form data not found in session for order: ' . $orderId);
+            
+            // Try to get from database
+            if (isset($existing_order)) {
+                $form_data = $existing_order;
+                log_message('info', 'Retrieved form data from database');
+            } else {
+                show_error('Form data not found. Please try generating your Kundli again.');
+                return;
+            }
         }
 
         // Check if user is logged in
         $user_id = $this->session->userdata('user_id');
         if (!$user_id) {
-            // Create user account
-            $user_data = [
-                'name' => $form_data['name'],
-                'email' => $form_data['email'] ?? null,
-                'phone' => $form_data['phone'],
-                'whatsapp' => $form_data['phone'] // Use phone as whatsapp
-            ];
-
-            $new_user_id = $this->User_model->create_user_from_kundli($user_data);
-            if (!$new_user_id) {
-                show_error('Failed to create user account');
-                return;
-            }
-
-            // Log the user in
-            $user = $this->User_model->get_user($new_user_id);
-            if ($user) {
+            // Check if user already exists by phone number
+            $existing_user = $this->User_model->get_user_by_phone($form_data['phone']);
+            
+            if ($existing_user) {
+                // User exists, log them in
                 $session_data = [
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'user_email' => $user->email,
+                    'user_id' => $existing_user['id'],
+                    'user_name' => $existing_user['name'],
+                    'user_email' => $existing_user['email'] ?? null,
                     'logged_in' => true
                 ];
                 $this->session->set_userdata($session_data);
-                $user_id = $user->id;
+                $user_id = $existing_user['id'];
             } else {
-                show_error('Failed to log in user');
-                return;
+                // Create new user account
+                $user_data = [
+                    'name' => $form_data['name'],
+                    'email' => !empty($form_data['email']) ? $form_data['email'] : null,
+                    'phone' => $form_data['phone'],
+                    'whatsapp' => $form_data['phone'] // Use phone as whatsapp
+                ];
+
+                $new_user_id = $this->User_model->create_user_from_kundli($user_data);
+                if (!$new_user_id) {
+                    show_error('Failed to create user account');
+                    return;
+                }
+
+                // Log the user in
+                $user = $this->User_model->get_user($new_user_id);
+                if ($user) {
+                    $session_data = [
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'user_email' => $user->email,
+                        'logged_in' => true
+                    ];
+                    $this->session->set_userdata($session_data);
+                    $user_id = $user->id;
+                } else {
+                    show_error('Failed to log in user');
+                    return;
+                }
             }
         }
 
@@ -172,26 +229,47 @@ class Payment extends CI_Controller
             'birth_date' => $form_data['dob'],
             'birth_time' => $form_data['tob'],
             'birth_place' => $form_data['pob'],
+            'phone' => $form_data['phone'],
+            'email' => !empty($form_data['email']) ? $form_data['email'] : null,
+            'payment_status' => 'COMPLETED',
+            'order_id' => $orderId,
+            'amount' => isset($form_data['kundli_type']) && $form_data['kundli_type'] === 'detailed' ? 101.00 : 51.00,
             'kundli_data' => json_encode([
                 'gender' => $form_data['gender'],
                 'language' => $form_data['language'],
                 'kundli_type' => $form_data['kundli_type'],
-                'lat' => $form_data['lat'],
-                'long' => $form_data['long']
+                'lat' => isset($form_data['lat']) ? $form_data['lat'] : null,
+                'long' => isset($form_data['long']) ? $form_data['long'] : null
             ])
         ];
 
         $kundli_id = $this->User_model->save_kundli($kundli_data);
         if (!$kundli_id) {
+            log_message('error', 'Failed to save kundli for order: ' . $orderId);
             show_error('Failed to generate kundli');
             return;
         }
 
+        // Update the database record with completion status
+        $this->load->model('frontend/Contactmodel');
+        $this->Contactmodel->update_kundli_by_order_id($orderId, [
+            'payment_status' => 'COMPLETED',
+            'kundli_id' => $kundli_id,
+            'user_id' => $user_id,
+            'processed_at' => date('Y-m-d H:i:s')
+        ]);
+
         // Clear session data
         $this->session->unset_userdata(['kundli_form_data', 'merchant_order_id']);
 
-        // Redirect to view kundli
-        redirect('dashboard/view_kundli/' . $kundli_id);
+        // Set success message and store kundli ID for dashboard
+        $this->session->set_flashdata('success', 'Payment successful! Your Kundli has been generated successfully.');
+        $this->session->set_flashdata('new_kundli_id', $kundli_id);
+
+        log_message('info', 'Payment confirmation completed successfully for order: ' . $orderId . ', kundli_id: ' . $kundli_id);
+
+        // Redirect to dashboard first, then it will show the new kundli
+        redirect('dashboard');
     }
 
     /**
@@ -200,9 +278,22 @@ class Payment extends CI_Controller
     public function payment_cancel()
     {
         $orderId = $this->input->get('orderId') ?? 'N/A';
-        $data['orderId'] = $orderId;
-        $data['status']  = 'cancelled';
-        $this->load->view('payment_cancel', $data);
+        
+        // Update database record if exists
+        if ($orderId !== 'N/A') {
+            $this->load->model('frontend/Contactmodel');
+            $this->Contactmodel->update_kundli_by_order_id($orderId, [
+                'payment_status' => 'CANCELLED',
+                'cancelled_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+        
+        // Clear session data
+        $this->session->unset_userdata(['kundli_form_data', 'merchant_order_id']);
+        
+        // Set flash message and redirect to form
+        $this->session->set_flashdata('error', 'Payment was cancelled. You can try again whenever you\'re ready.');
+        redirect('generate-kundli');
     }
 
     /**
@@ -211,9 +302,22 @@ class Payment extends CI_Controller
     public function payment_failure()
     {
         $orderId = $this->input->get('orderId') ?? 'N/A';
-        $data['orderId'] = $orderId;
-        $data['status']  = 'failed';
-        $this->load->view('payment_failure', $data);
+        
+        // Update database record if exists
+        if ($orderId !== 'N/A') {
+            $this->load->model('frontend/Contactmodel');
+            $this->Contactmodel->update_kundli_by_order_id($orderId, [
+                'payment_status' => 'FAILED',
+                'failed_at' => date('Y-m-d H:i:s')
+            ]);
+        }
+        
+        // Clear session data
+        $this->session->unset_userdata(['kundli_form_data', 'merchant_order_id']);
+        
+        // Set flash message and redirect to form
+        $this->session->set_flashdata('error', 'Payment failed. Please try again or contact support if money was debited.');
+        redirect('generate-kundli');
     }
 
     /**
@@ -259,5 +363,40 @@ class Payment extends CI_Controller
         }
 
         echo $response;
+    }
+
+    /**
+     * Verify payment status with PhonePe
+     */
+    private function verify_payment_status($orderId)
+    {
+        $phonepe_url = site_url('phonepe/order_status?orderId=' . urlencode($orderId));
+
+        $ch = curl_init($phonepe_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error || $http_code !== 200) {
+            log_message('error', 'Payment status verification failed for order: ' . $orderId . ', error: ' . $error . ', http_code: ' . $http_code);
+            return 'ERROR';
+        }
+
+        $status_data = json_decode($response, true);
+        
+        // Check for successful payment
+        if (isset($status_data['code']) && $status_data['code'] === 'SUCCESS' && 
+            isset($status_data['data']['state']) && $status_data['data']['state'] === 'COMPLETED') {
+            return 'SUCCESS';
+        }
+
+        // Log the actual response for debugging
+        log_message('debug', 'Payment status response for order ' . $orderId . ': ' . $response);
+        
+        return isset($status_data['data']['state']) ? $status_data['data']['state'] : 'UNKNOWN';
     }
 }

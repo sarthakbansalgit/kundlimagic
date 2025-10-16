@@ -126,16 +126,19 @@ class User_model extends CI_Model
         $whatsapp = null;
         if (isset($kundliData['whatsapp']) && !empty($kundliData['whatsapp'])) {
             $whatsapp = $kundliData['whatsapp'];
+        } elseif (isset($kundliData['phone']) && !empty($kundliData['phone'])) {
+            $whatsapp = $kundliData['phone'];
         } elseif (isset($kundliData['ph_no'])) {
             $whatsapp = $kundliData['ph_no'];
         }
 
-        $phone = isset($kundliData['ph_no']) ? $kundliData['ph_no'] : null;
+        $phone = isset($kundliData['phone']) ? $kundliData['phone'] : 
+                (isset($kundliData['ph_no']) ? $kundliData['ph_no'] : null);
 
         $data = array(
             '_id'        => $this->mongodb_simple->generate_id(),
-            'name'       => isset($kundliData['name']) ? $kundliData['name'] : 'User',
-            'email'      => isset($kundliData['email']) ? $kundliData['email'] : null,
+            'name'       => isset($kundliData['name']) ? trim($kundliData['name']) : 'User',
+            'email'      => isset($kundliData['email']) && !empty(trim($kundliData['email'])) ? trim($kundliData['email']) : null,
             'whatsapp'   => $whatsapp,
             'phone'      => $phone,
             'password'   => $password,
@@ -143,11 +146,22 @@ class User_model extends CI_Model
             'updated_at' => $now,
         );
 
-        // Remove nulls to avoid issues
-        $data = array_filter($data, function($v) { return $v !== null; });
+        // Remove nulls and empty strings to avoid issues
+        $data = array_filter($data, function($v) { return $v !== null && $v !== ''; });
 
-        $result = $this->mongodb_simple->insert($this->collection, $data);
-        return $result ? $data['_id'] : false;
+        try {
+            $result = $this->mongodb_simple->insert($this->collection, $data);
+            if ($result) {
+                log_message('info', 'Created new user account with ID: ' . $data['_id']);
+                return $data['_id'];
+            } else {
+                log_message('error', 'Failed to insert user data into MongoDB');
+                return false;
+            }
+        } catch (Exception $e) {
+            log_message('error', 'Exception while creating user: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // Check if email exists

@@ -354,6 +354,13 @@
 <script>
     $('#genrateKundli').on('submit', function(e) {
         e.preventDefault();
+        
+        // Show loading state
+        const submitBtn = $('#genrateKundliBtn');
+        const originalText = submitBtn.text();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        
+        $('#response').html('<div class="alert alert-info" role="alert"><i class="fas fa-spinner fa-spin"></i> Processing your request...</div>');
 
             $.ajax({
             url: '<?= base_url("payment/generateKundli") ?>',
@@ -364,33 +371,71 @@
         try {
           const res = JSON.parse(response);
 
+          // Check for successful PhonePe response with redirect URL
           if (res.code === 'SUCCESS' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) {
-            // Redirect to PhonePe checkout
-            window.location.href = res.data.instrumentResponse.redirectInfo.url;
+            // Show loading message
+            $('#response').html('<div class="alert alert-info" role="alert"><i class="fas fa-spinner fa-spin"></i> Redirecting to PhonePe payment gateway...</div>');
+            
+            // Redirect to PhonePe checkout after a short delay
+            setTimeout(function() {
+              window.location.href = res.data.instrumentResponse.redirectInfo.url;
+            }, 1000);
+            return;
+          }
+
+          // Handle different response formats
+          if (res.status === 'success' && res.redirectUrl) {
+            $('#response').html('<div class="alert alert-info" role="alert"><i class="fas fa-spinner fa-spin"></i> Redirecting to payment gateway...</div>');
+            setTimeout(function() {
+              window.location.href = res.redirectUrl;
+            }, 1000);
             return;
           }
 
           // If server returned an error or unexpected payload
-          let message = res.message || 'Unexpected response from server.';
-          $('#response').html('<div class="alert alert-danger" role="alert">' + message + '</div>');
+          let message = res.message || res.error || 'Unexpected response from server. Please try again.';
+          $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-triangle"></i> ' + message + '</div>');
           setTimeout(function() {
             $('#response').fadeOut('slow', function() { $(this).html('').show(); });
-          }, 3000);
+          }, 5000);
         } catch(e) {
           console.error('JSON Parse Error:', e);
-          $('#response').html('<div class="alert alert-danger" role="alert">Error processing response. Please try again.</div>');
+          console.log('Raw response:', response);
+          $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-triangle"></i> Error processing response. Please try again.</div>');
+          setTimeout(function() {
+            $('#response').fadeOut('slow', function() { $(this).html('').show(); });
+          }, 5000);
         }
+        
+        // Reset button state
+        submitBtn.prop('disabled', false).html(originalText);
       },
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', xhr.responseText); // Debug log
-                $('#response').html('<div class="alert alert-danger" role="alert">' + error + '</div>');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                
+                let errorMessage = 'Request failed. Please check your internet connection and try again.';
+                if (xhr.responseText) {
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMessage = errorResponse.message || errorMessage;
+                    } catch(e) {
+                        // Use default message if response is not JSON
+                    }
+                }
+                
+                $('#response').html('<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-triangle"></i> ' + errorMessage + '</div>');
 
-                // Hide after 3 seconds
+                // Reset button state
+                submitBtn.prop('disabled', false).html(originalText);
+
+                // Hide after 5 seconds
                 setTimeout(function() {
                     $('#response').fadeOut('slow', function() {
                         $(this).html('').show();
                     });
-                }, 3000);
+                }, 5000);
             }
         });
     });
