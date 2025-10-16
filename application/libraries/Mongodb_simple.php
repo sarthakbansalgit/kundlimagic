@@ -38,10 +38,15 @@ class Mongodb_simple {
         // Add new document
         $existing_data[] = $data;
         
-        // Save back to file
-        $result = file_put_contents($file_path, json_encode($existing_data, JSON_PRETTY_PRINT));
+        // Save back to file with error handling
+        $result = @file_put_contents($file_path, json_encode($existing_data, JSON_PRETTY_PRINT), LOCK_EX);
         
-        return $result !== false;
+        if ($result === false) {
+            log_message('error', 'Failed to write to collection: ' . $collection);
+            return false;
+        }
+        
+        return true;
     }
     
     /**
@@ -67,9 +72,30 @@ class Mongodb_simple {
                 }
                 return true;
             });
+            $data = array_values($data);
         }
         
-        return array_values($data);
+        // Apply sorting if specified
+        if (isset($options['sort']) && is_array($options['sort'])) {
+            foreach ($options['sort'] as $sort_key => $sort_direction) {
+                usort($data, function($a, $b) use ($sort_key, $sort_direction) {
+                    $val_a = isset($a[$sort_key]) ? $a[$sort_key] : '';
+                    $val_b = isset($b[$sort_key]) ? $b[$sort_key] : '';
+                    
+                    if ($sort_direction === -1 || $sort_direction === 'desc') {
+                        return $val_b <=> $val_a;
+                    }
+                    return $val_a <=> $val_b;
+                });
+            }
+        }
+        
+        // Apply limit if specified
+        if (isset($options['limit']) && is_numeric($options['limit'])) {
+            $data = array_slice($data, 0, (int)$options['limit']);
+        }
+        
+        return $data;
     }
     
     /**
