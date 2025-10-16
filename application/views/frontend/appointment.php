@@ -364,7 +364,11 @@
         try {
           const res = JSON.parse(response);
 
-          if (res.code === 'SUCCESS' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) {
+          // Handle both legacy and PhonePe PG v1 response shapes
+          if (
+            (res.code === 'SUCCESS' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) ||
+            (res.success === true && res.code === 'PAYMENT_INITIATED' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url)
+          ) {
             // Redirect to PhonePe checkout
             window.location.href = res.data.instrumentResponse.redirectInfo.url;
             return;
