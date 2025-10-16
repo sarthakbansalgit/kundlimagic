@@ -239,3 +239,18 @@ $config['client_secret'] = '89152c1b-4192-4819-b600-2915037f18f9'; // Updated Ph
 $config['client_version'] = 'v1'; // Or as required by PhonePe
 $config['token_url'] = 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token';
 $config['payment_url'] = 'https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay';
+
+/*
+|--------------------------------------------------------------------------
+| PhonePe PG v1 (X-VERIFY) Configuration
+|--------------------------------------------------------------------------
+| NOTE: Fill these with your actual sandbox/production credentials.
+| merchant_id: Provided by PhonePe
+| salt_key: Secret key used to compute X-VERIFY
+| salt_index: Index provided by PhonePe for key rotation (usually '1' in sandbox)
+| base_url: Base URL for PG APIs (preprod shown here)
+*/
+$config['phonepe_pg_base']      = 'https://api-preprod.phonepe.com/apis/pg-sandbox';
+$config['phonepe_merchant_id']  = getenv('PHONEPE_MERCHANT_ID') ?: 'YOUR_MERCHANT_ID';
+$config['phonepe_salt_key']     = getenv('PHONEPE_SALT_KEY') ?: 'YOUR_SALT_KEY';
+$config['phonepe_salt_index']   = getenv('PHONEPE_SALT_INDEX') ?: '1';

@@ -364,9 +364,17 @@
         try {
           const res = JSON.parse(response);
 
-          if (res.code === 'SUCCESS' && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) {
+          // PhonePe PG returns {code:"SUCCESS", data:{instrumentResponse:{redirectInfo:{url}}}}
+          // Some environments may still return {success:true, data:{...}} – relax check to any redirect URL presence
+          if ((res.code === 'SUCCESS' || res.success === true) && res.data && res.data.instrumentResponse && res.data.instrumentResponse.redirectInfo && res.data.instrumentResponse.redirectInfo.url) {
             // Redirect to PhonePe checkout
             window.location.href = res.data.instrumentResponse.redirectInfo.url;
+            return;
+          }
+
+          // Fallback: legacy wrapper structure
+          if (res.data && res.data.redirectUrl) {
+            window.location.href = res.data.redirectUrl;
             return;
           }
 
