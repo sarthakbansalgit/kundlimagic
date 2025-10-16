@@ -358,11 +358,12 @@
             $.ajax({
             url: '<?= base_url("payment/generateKundli") ?>',
             type: 'POST',
+            dataType: 'json',
             data: $(this).serialize(),
       success: function(response) {
         console.log('Response:', response); // Debug log
         try {
-          const res = JSON.parse(response);
+          const res = (typeof response === 'string') ? JSON.parse(response) : response;
 
           // Handle both legacy and PhonePe PG v1 response shapes
           if (

@@ -63,24 +63,43 @@ class Payment extends CI_Controller
         $this->session->set_userdata('kundli_form_data', $data);
         $this->session->set_userdata('merchant_order_id', $merchantOrderId);
 
-        // Call PhonePe controller (internal API)
-        $phonepe_url = site_url('phonepe/create_payment');
+        // Direct PhonePe PG v1 call (avoid internal HTTP dependency)
+        $merchantId = $this->config->item('phonepe_merchant_id');
+        $baseUrl    = rtrim($this->config->item('phonepe_pg_base_url'), '/');
+        $saltKey    = $this->config->item('phonepe_salt_key');
+        $saltIndex  = $this->config->item('phonepe_salt_index');
+        $path       = '/pg/v1/pay';
+        $url        = $baseUrl . $path;
 
-        $payload = json_encode([
-            'merchantOrderId' => $merchantOrderId,
-            'amount'          => $amount,
-            // pass phone to bind merchantUserId for PhonePe side
-            'phone'           => $data['phone'] ?? null,
-        ]);
+        $merchantUserId = isset($data['phone']) ? preg_replace('/\D+/', '', $data['phone']) : 'KMUSER' . date('Ymd');
+        $amountPaise = intval(round($amount * 100));
 
-        $ch = curl_init($phonepe_url);
+        $pp_payload = [
+            'merchantId'              => $merchantId,
+            'merchantTransactionId'   => $merchantOrderId,
+            'merchantUserId'          => $merchantUserId,
+            'amount'                  => $amountPaise,
+            'redirectUrl'             => site_url('payment/payment_confirmation?orderId=' . urlencode($merchantOrderId)),
+            'redirectMode'            => 'GET',
+            'callbackUrl'             => site_url('payment/check_status/' . rawurlencode($merchantOrderId)),
+            'paymentInstrument'       => [ 'type' => 'PAY_PAGE' ],
+        ];
+
+        $payloadJson = json_encode($pp_payload, JSON_UNESCAPED_SLASHES);
+        $base64      = base64_encode($payloadJson);
+        $requestBody = json_encode(['request' => $base64]);
+        $xverify     = hash('sha256', $base64 . $path . $saltKey) . '###' . $saltIndex;
+
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30); // 30 second timeout
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // 10 second connection timeout
-        
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'X-VERIFY: ' . $xverify,
+            'X-MERCHANT-ID: ' . $merchantId,
+        ]);
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
@@ -88,18 +107,11 @@ class Payment extends CI_Controller
 
         header('Content-Type: application/json');
 
-        if ($error) {
+        if ($error || $http_code !== 200) {
             echo json_encode([
-                'status'  => 'error',
-                'message' => 'Payment service temporarily unavailable. Please try again later.'
-            ]);
-            return;
-        }
-
-        if ($http_code !== 200) {
-            echo json_encode([
-                'status'  => 'error',
-                'message' => 'Payment service error. Please try again later.'
+                'success' => false,
+                'code'    => 'PAYMENT_ERROR',
+                'message' => 'Unable to initiate payment. Please try again shortly.'
             ]);
             return;
         }
@@ -223,7 +235,7 @@ class Payment extends CI_Controller
             }
         }
 
-        // Generate kundli
+        // Generate kundli record
         $kundli_data = [
             'user_id' => $user_id,
             'name' => $form_data['name'],
@@ -231,11 +243,11 @@ class Payment extends CI_Controller
             'birth_time' => $form_data['tob'],
             'birth_place' => $form_data['pob'],
             'kundli_data' => json_encode([
-                'gender' => $form_data['gender'],
-                'language' => $form_data['language'],
-                'kundli_type' => $form_data['kundli_type'],
-                'lat' => $form_data['lat'],
-                'long' => $form_data['long']
+                'gender' => $form_data['gender'] ?? null,
+                'language' => $form_data['language'] ?? null,
+                'kundli_type' => $form_data['kundli_type'] ?? 'basic',
+                'lat' => $form_data['lat'] ?? null,
+                'long' => $form_data['long'] ?? null
             ])
         ];
 
@@ -243,6 +255,47 @@ class Payment extends CI_Controller
         if (!$kundli_id) {
             show_error('Failed to generate kundli');
             return;
+        }
+
+        // Attempt to generate a simple PDF and store locally for dashboard link
+        try {
+            $uploadsDir = FCPATH . 'uploads/kundlis/';
+            if (!is_dir($uploadsDir)) {
+                @mkdir($uploadsDir, 0755, true);
+            }
+
+            // Build very simple HTML summary
+            $html = '<html><head><meta charset="utf-8"><style>body{font-family: DejaVu Sans, sans-serif;padding:24px;}h1{color:#ff7010;}table{width:100%;border-collapse:collapse;margin-top:16px}td{border:1px solid #ddd;padding:8px}</style></head><body>';
+            $html .= '<h1>Kundli Summary</h1>';
+            $html .= '<table>';
+            $html .= '<tr><td><strong>Name</strong></td><td>' . htmlspecialchars($form_data['name']) . '</td></tr>';
+            $html .= '<tr><td><strong>Birth Date</strong></td><td>' . htmlspecialchars($form_data['dob']) . '</td></tr>';
+            $html .= '<tr><td><strong>Birth Time</strong></td><td>' . htmlspecialchars($form_data['tob']) . '</td></tr>';
+            $html .= '<tr><td><strong>Birth Place</strong></td><td>' . htmlspecialchars($form_data['pob']) . '</td></tr>';
+            $html .= '<tr><td><strong>Gender</strong></td><td>' . htmlspecialchars($form_data['gender'] ?? '') . '</td></tr>';
+            $html .= '<tr><td><strong>Language</strong></td><td>' . htmlspecialchars($form_data['language'] ?? '') . '</td></tr>';
+            $html .= '<tr><td><strong>Type</strong></td><td>' . htmlspecialchars($form_data['kundli_type'] ?? 'basic') . '</td></tr>';
+            $html .= '</table>';
+            $html .= '<p style="margin-top:16px;color:#666">This is a placeholder PDF. Replace with real kundli rendering.</p>';
+            $html .= '</body></html>';
+
+            // Render PDF using Dompdf directly
+            require_once(APPPATH . 'libraries/dompdf/autoload.inc.php');
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $output = $dompdf->output();
+
+            $relativePath = 'uploads/kundlis/kundli_' . $kundli_id . '.pdf';
+            $filePath = FCPATH . $relativePath;
+            file_put_contents($filePath, $output);
+
+            // Update kundli record with local PDF path
+            $this->User_model->update_kundli($kundli_id, ['local_pdf_path' => $relativePath]);
+        } catch (\Throwable $e) {
+            // If PDF generation fails, continue without blocking flow
+            log_message('error', 'PDF generation failed: ' . $e->getMessage());
         }
 
         // Clear session data

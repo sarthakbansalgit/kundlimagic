@@ -96,6 +96,12 @@ class User_model extends CI_Model
         return null;
     }
 
+    // Update kundli document by id
+    public function update_kundli($kundli_id, $data)
+    {
+        return $this->mongodb_simple->update_one('kundlis', ['_id' => $kundli_id], $data);
+    }
+
     // Get user by phone/whatsapp number
     public function get_user_by_phone($phone)
     {
