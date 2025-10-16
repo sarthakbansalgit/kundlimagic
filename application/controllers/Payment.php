@@ -47,6 +47,49 @@ class Payment extends CI_Controller
             return;
         }
 
+        // Sanitize and validate input data
+        $data['name'] = trim(strip_tags($data['name']));
+        $data['phone'] = preg_replace('/[^0-9]/', '', $data['phone']);
+        $data['pob'] = trim(strip_tags($data['pob']));
+        
+        // Validate phone number (10 digits)
+        if (strlen($data['phone']) !== 10) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Phone number must be 10 digits'
+            ]);
+            return;
+        }
+        
+        // Validate email if provided
+        if (isset($data['email']) && !empty($data['email'])) {
+            $data['email'] = filter_var($data['email'], FILTER_SANITIZE_EMAIL);
+            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Invalid email address'
+                ]);
+                return;
+            }
+        }
+        
+        // Validate gender
+        if (!in_array($data['gender'], ['male', 'female'])) {
+            $data['gender'] = 'male';
+        }
+        
+        // Validate kundli_type
+        if (!in_array($data['kundli_type'], ['basic', 'detailed'])) {
+            $data['kundli_type'] = 'basic';
+        }
+        
+        // Validate language
+        if (!in_array($data['language'], ['hi', 'en'])) {
+            $data['language'] = 'en';
+        }
+
         // Validate and set defaults
         $amount = isset($data['amount']) ? (float)$data['amount'] : 51.00;
         

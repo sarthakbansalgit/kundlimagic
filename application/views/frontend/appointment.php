@@ -360,7 +360,6 @@
             type: 'POST',
             data: $(this).serialize(),
       success: function(response) {
-        console.log('Response:', response); // Debug log
         try {
           const res = JSON.parse(response);
 
@@ -382,7 +381,6 @@
         }
       },
             error: function(xhr, status, error) {
-                console.error('AJAX Error:', xhr.responseText); // Debug log
                 $('#response').html('<div class="alert alert-danger" role="alert">' + error + '</div>');
 
                 // Hide after 3 seconds
@@ -487,8 +485,7 @@ function fillFormWithTestData() {
     const kundliTypes = ['basic', 'detailed'];
     const selectedType = kundliTypes[Math.floor(Math.random() * kundliTypes.length)];
     $('input[name="kundli_type"][value="' + selectedType + '"]').prop('checked', true);
-    
-    console.log('Form filled with test data!');
+
 }
 
 // Function to clear form
@@ -496,7 +493,6 @@ function clearForm() {
     $('#genrateKundli')[0].reset();
     $('input[name="lat"]').val('');
     $('input[name="long"]').val('');
-    console.log('Form cleared!');
 }
 
 // Event listeners
