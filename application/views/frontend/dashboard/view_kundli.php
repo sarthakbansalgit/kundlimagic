@@ -123,16 +123,35 @@
                     <div class="action-buttons text-center">
                         <?php 
                         $kundli_data = json_decode($kundli->kundli_data, true);
-                        if ($kundli->local_pdf_path && file_exists(FCPATH . $kundli->local_pdf_path)): ?>
-                            <a href="<?php echo base_url('dashboard/download_pdf/'.$kundli->id); ?>" target="_blank" class="as_btn" style="margin-right: 15px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        $has_pdf = false;
+                        
+                        if (isset($kundli->local_pdf_path) && !empty($kundli->local_pdf_path)): 
+                            $pdf_full_path = FCPATH . $kundli->local_pdf_path;
+                            if (file_exists($pdf_full_path)): 
+                                $has_pdf = true; ?>
+                                <a href="<?php echo base_url('dashboard/download_pdf/'.$kundli->id); ?>" target="_blank" class="as_btn" style="margin-right: 15px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);">
+                                    <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
+                                    Download Your Kundli PDF
+                                </a>
+                                <a href="<?php echo base_url($kundli->local_pdf_path); ?>" target="_blank" class="as_btn" style="margin-right: 15px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);">
+                                    <i class="fas fa-eye" style="margin-right: 8px;"></i>
+                                    View PDF Online
+                                </a>
+                            <?php endif;
+                        endif;
+                        
+                        if (!$has_pdf && isset($kundli_data['pdf_url']) && !empty($kundli_data['pdf_url'])): 
+                            $has_pdf = true; ?>
+                            <a href="<?php echo $kundli_data['pdf_url']; ?>" target="_blank" class="as_btn" style="margin-right: 15px; background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%); box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);">
                                 <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
-                                View PDF (Local)
+                                View PDF
                             </a>
-                        <?php elseif (isset($kundli_data['pdf_url'])): ?>
-                            <a href="<?php echo $kundli_data['pdf_url']; ?>" target="_blank" class="as_btn" style="margin-right: 15px; background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);">
-                                <i class="fas fa-file-pdf" style="margin-right: 8px;"></i>
-                                View PDF (External)
-                            </a>
+                        <?php endif;
+                        
+                        if (!$has_pdf): ?>
+                            <div class="alert alert-info" style="display: inline-block; margin-right: 15px;">
+                                <i class="fas fa-info-circle"></i> PDF is being generated. Please refresh in a moment.
+                            </div>
                         <?php endif; ?>
                         
                         <a href="<?php echo base_url('generate-kundli'); ?>" class="as_btn" style="margin-right: 15px;">
