@@ -19,6 +19,14 @@
                     <?php if($this->session->flashdata('success')): ?>
                         <div class="alert alert-success" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
                             <i class="fas fa-check-circle"></i> <?php echo $this->session->flashdata('success'); ?>
+                            <?php if($this->session->flashdata('new_kundli_id')): ?>
+                                <div style="margin-top: 10px;">
+                                    <a href="<?php echo base_url('dashboard/kundli/'.$this->session->flashdata('new_kundli_id')); ?>" class="as_btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: #ffffff !important; font-weight: bold; text-decoration: none; padding: 8px 16px; border-radius: 6px; display: inline-block;">
+                                        <i class="fas fa-eye" style="margin-right: 5px;"></i>
+                                        View Your New Kundli
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
 

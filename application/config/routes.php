@@ -11,9 +11,11 @@ $route['register'] = 'auth/register';
 $route['auth/register'] = 'auth/register';
 $route['logout'] = 'auth/logout';
 $route['auth/logout'] = 'auth/logout';
-$route['dashboard'] = 'dashboard';
+$route['dashboard'] = 'dashboard/index';
 $route['dashboard/profile'] = 'dashboard/profile';
-$route['dashboard/kundli/(:num)'] = 'dashboard/view_kundli/$1';
+$route['dashboard/kundli/(:any)'] = 'dashboard/view_kundli/$1';
+$route['dashboard/view_kundli/(:any)'] = 'dashboard/view_kundli/$1';
+$route['dashboard/download_pdf/(:any)'] = 'dashboard/download_pdf/$1';
 
 // Frontend routes
 $route['contact-us'] = 'frontend/contact';

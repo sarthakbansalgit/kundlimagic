@@ -92,7 +92,8 @@ class Phonepe extends CI_Controller
                     'cancelUrl' => site_url('payment/payment_cancel?orderId=' . urlencode($merchantOrderId)),
                     'failureUrl' => site_url('payment/payment_failure?orderId=' . urlencode($merchantOrderId))
                 ]
-            ]
+            ],
+            'merchantId' => $this->config->item('client_id')
         ];
 
         $json_payload = json_encode($payload);
