@@ -131,37 +131,90 @@ class Payment extends CI_Controller
             return;
         }
 
+        // Verify payment status with PhonePe
+        $phonepe_url = site_url('phonepe/order_status?orderId=' . urlencode($orderId));
+        $ch = curl_init($phonepe_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_code !== 200 || !$response) {
+            $this->session->set_flashdata('error', 'Unable to verify payment status. Please contact support with your Order ID: ' . $orderId);
+            redirect('generate-kundli');
+            return;
+        }
+
+        $payment_status = json_decode($response, true);
+        
+        // Check if payment was successful
+        // PhonePe returns status in different formats, check for common success indicators
+        $is_payment_success = false;
+        if (isset($payment_status['code']) && $payment_status['code'] === 'SUCCESS') {
+            $is_payment_success = true;
+        } elseif (isset($payment_status['status']) && strtoupper($payment_status['status']) === 'SUCCESS') {
+            $is_payment_success = true;
+        } elseif (isset($payment_status['data']['orderStatus']) && strtoupper($payment_status['data']['orderStatus']) === 'COMPLETED') {
+            $is_payment_success = true;
+        }
+
+        if (!$is_payment_success) {
+            $this->session->set_flashdata('error', 'Payment was not completed successfully. Please try again or contact support.');
+            redirect('generate-kundli');
+            return;
+        }
+
         // Check if user is logged in
         $user_id = $this->session->userdata('user_id');
         if (!$user_id) {
-            // Create user account
-            $user_data = [
-                'name' => $form_data['name'],
-                'email' => $form_data['email'] ?? null,
-                'phone' => $form_data['phone'],
-                'whatsapp' => $form_data['phone'] // Use phone as whatsapp
-            ];
-
-            $new_user_id = $this->User_model->create_user_from_kundli($user_data);
-            if (!$new_user_id) {
-                show_error('Failed to create user account');
-                return;
+            // Check if user exists by phone number
+            $existing_user = null;
+            if (!empty($form_data['phone'])) {
+                $existing_user = $this->User_model->get_user_by_phone($form_data['phone']);
             }
 
-            // Log the user in
-            $user = $this->User_model->get_user($new_user_id);
-            if ($user) {
+            if ($existing_user) {
+                // User exists, log them in
                 $session_data = [
-                    'user_id' => $user->id,
-                    'user_name' => $user->name,
-                    'user_email' => $user->email,
+                    'user_id' => $existing_user['id'],
+                    'user_name' => $existing_user['name'],
+                    'user_email' => isset($existing_user['email']) ? $existing_user['email'] : null,
                     'logged_in' => true
                 ];
                 $this->session->set_userdata($session_data);
-                $user_id = $user->id;
+                $user_id = $existing_user['id'];
             } else {
-                show_error('Failed to log in user');
-                return;
+                // Create new user account
+                $user_data = [
+                    'name' => $form_data['name'],
+                    'email' => isset($form_data['email']) && !empty($form_data['email']) ? $form_data['email'] : null,
+                    'phone' => $form_data['phone'],
+                    'whatsapp' => $form_data['phone'] // Use phone as whatsapp
+                ];
+
+                $new_user_id = $this->User_model->create_user_from_kundli($user_data);
+                if (!$new_user_id) {
+                    show_error('Failed to create user account');
+                    return;
+                }
+
+                // Log the user in
+                $user = $this->User_model->get_user($new_user_id);
+                if ($user) {
+                    $session_data = [
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'user_email' => isset($user->email) ? $user->email : null,
+                        'logged_in' => true
+                    ];
+                    $this->session->set_userdata($session_data);
+                    $user_id = $user->id;
+                } else {
+                    show_error('Failed to log in user');
+                    return;
+                }
             }
         }
 
@@ -190,8 +243,8 @@ class Payment extends CI_Controller
         // Clear session data
         $this->session->unset_userdata(['kundli_form_data', 'merchant_order_id']);
 
-        // Redirect to view kundli
-        redirect('dashboard/view_kundli/' . $kundli_id);
+        // Redirect to dashboard to view kundli
+        redirect('dashboard/kundli/' . $kundli_id);
     }
 
     /**

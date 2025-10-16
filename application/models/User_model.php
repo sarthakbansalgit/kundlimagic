@@ -122,22 +122,28 @@ class User_model extends CI_Model
         $now = $this->mongodb_simple->get_timestamp();
         $password = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
 
-        // Determine whatsapp/phone values cleanly
+        // Determine phone/whatsapp values cleanly - support both 'phone' and 'ph_no' fields
+        $phone = null;
+        if (isset($kundliData['phone']) && !empty($kundliData['phone'])) {
+            $phone = $kundliData['phone'];
+        } elseif (isset($kundliData['ph_no']) && !empty($kundliData['ph_no'])) {
+            $phone = $kundliData['ph_no'];
+        }
+
         $whatsapp = null;
         if (isset($kundliData['whatsapp']) && !empty($kundliData['whatsapp'])) {
             $whatsapp = $kundliData['whatsapp'];
-        } elseif (isset($kundliData['ph_no'])) {
-            $whatsapp = $kundliData['ph_no'];
+        } else {
+            // Use phone as whatsapp if whatsapp not provided
+            $whatsapp = $phone;
         }
-
-        $phone = isset($kundliData['ph_no']) ? $kundliData['ph_no'] : null;
 
         $data = array(
             '_id'        => $this->mongodb_simple->generate_id(),
             'name'       => isset($kundliData['name']) ? $kundliData['name'] : 'User',
             'email'      => isset($kundliData['email']) ? $kundliData['email'] : null,
-            'whatsapp'   => $whatsapp,
             'phone'      => $phone,
+            'whatsapp'   => $whatsapp,
             'password'   => $password,
             'created_at' => $now,
             'updated_at' => $now,
